@@ -2,24 +2,51 @@ import React, { useState, useEffect } from "react";
 import List from "./List";
 import Alert from "./Alert";
 
+const getLocalStorage = () => {
+  let list = localStorage.getItem("list");
+  if (list) {
+    return JSON.parse(localStorage.getItem("list"));
+  } else {
+    return [];
+  }
+};
+
 function App() {
   const [name, setName] = useState("");
-  const [list, setLIst] = useState([]);
+  const [list, setLIst] = useState(getLocalStorage());
   const [isEditing, setIsEdyting] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [alert, setAlert] = useState({ show: false, msg: "", type: "" });
+  const [alert, setAlert] = useState({
+    show: false,
+    msg: "",
+    type: "",
+  });
 
-  const clearHandler = () => {};
+  const clearHandler = () => {
+    showAlert(true, "Items cleared", "success");
+    setLIst([]);
+  };
 
   const sumbmitHandler = (event) => {
     event.preventDefault();
     if (!name) {
-      //display alert
+      showAlert(true, "Please enter value", "danger");
     } else if (name && isEditing) {
       //edit mode
+      setLIst(
+        list.map((item) => {
+          if (item.id === editId) {
+            return { ...item, title: name };
+          }
+          return item;
+        })
+      );
+      setEditId(null);
+      setIsEdyting(false);
+      setName("");
     } else {
       //Show alert
-
+      showAlert(true, "Item added", "success");
       //create a new item
       const newItem = { id: new Date().getTime().toString(), title: name };
       setLIst([...list, newItem]);
@@ -27,10 +54,31 @@ function App() {
     }
   };
 
+  const showAlert = (show = false, msg = "", type = "") => {
+    setAlert({ show, msg, type });
+  };
+
+  const removeItem = (id) => {
+    showAlert(true, "Item deleted", "danger");
+    setLIst(list.filter((item) => item.id !== id));
+  };
+
+  const editItem = (id) => {
+    showAlert(true, "Item edting", "success");
+    let itemToEdit = list.find((item) => item.id === id);
+    setName(itemToEdit.title);
+    setEditId(itemToEdit.id);
+    setIsEdyting(true);
+  };
+
+  useEffect(() => {
+    localStorage.setItem("list", JSON.stringify(list));
+  }, [list]);
+
   return (
     <section className="section-center">
       <form className="grocery-form" onSubmit={sumbmitHandler}>
-        {alert.show && <Alert />}
+        {alert.show && <Alert {...alert} removeAlert={showAlert} list={list} />}
         <h3> grocery buddy</h3>
         <div className="form-control">
           <input
@@ -47,12 +95,14 @@ function App() {
           </button>
         </div>
       </form>
-      <div className="grocery-container">
-        <List items={list} />
-        <button className="clear-btn" onClick={clearHandler}>
-          Clear Items{" "}
-        </button>
-      </div>
+      {list.length > 0 && (
+        <div className="grocery-container">
+          <List items={list} removeItem={removeItem} editItem={editItem} />
+          <button className="clear-btn" onClick={clearHandler}>
+            Clear Items{" "}
+          </button>
+        </div>
+      )}
     </section>
   );
 }
