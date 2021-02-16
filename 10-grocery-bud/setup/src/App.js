@@ -61,6 +61,9 @@ function App() {
   const removeItem = (id) => {
     showAlert(true, "Item deleted", "danger");
     setLIst(list.filter((item) => item.id !== id));
+    setEditId(null);
+    setIsEdyting(false);
+    setName("");
   };
 
   const editItem = (id) => {
